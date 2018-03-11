@@ -145,8 +145,7 @@ namespace CmsShoppingCart.Areas.Admin.Controllers
             }
             return View(model);
         }
-        // POST: Admin/Pages/Delete/id
-       
+        // GET: Admin/Pages/Delete/id       
         public ActionResult Delete(int id)
         {
           
@@ -164,6 +163,24 @@ namespace CmsShoppingCart.Areas.Admin.Controllers
             }        
             //redirect
             return RedirectToAction("Index");
+        }
+        // POST: Admin/Pages/RecorderPages    
+        [HttpPost] 
+        public void RecorderPages(int[] id)
+        {
+            using (var db = new Db())
+            {
+                int cnt = 1;
+                pageDTO dto;
+                //set soring for each pages
+                foreach(var pageId in id)
+                {
+                    dto = db.Pages.Find(pageId);
+                    dto.Sorting = cnt;
+                    db.SaveChanges();
+                    cnt++;
+                }
+            }
         }
     }
 }
