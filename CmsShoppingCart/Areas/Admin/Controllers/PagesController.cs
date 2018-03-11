@@ -22,7 +22,148 @@ namespace CmsShoppingCart.Areas.Admin.Controllers
             if (pagesList == null)
                 return HttpNotFound();
 
-                return View(pagesList);
+            return View(pagesList);
+        }
+        // GET: Admin/Pages/addpage
+        public ActionResult AddPage()
+        {
+            return View();
+        }
+        // POST: Admin/Pages/addpage
+        [HttpPost,ValidateAntiForgeryToken]
+        public ActionResult AddPage(PageVM model)
+        {
+            if(!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            using (var db = new Db())
+            {
+                string slug;
+                var dto = new pageDTO();
+                dto.Title = model.Title;
+                if (string.IsNullOrWhiteSpace(model.Slug))
+                    slug = model.Title.Replace(" ", "-").ToLower();
+                else
+                    slug = model.Slug.Replace(" ", "-").ToLower();
+                //chk sure title and slug is unique
+                if(db.Pages.Any(x=>x.Title== model.Title ) || db.Pages.Any(x => x.Slug == model.Slug))
+                {
+                    ModelState.AddModelError("", "that title or slug is already exist");
+                    return View(model);
+                }
+                //set dto
+                dto.Slug = slug;
+                dto.Body = model.Body;
+                dto.HasSidebar = model.HasSidebar;
+                dto.Sorting = 100;
+                //save
+                db.Pages.Add(dto);
+                db.SaveChanges();                    
+
+            }
+            //set msg
+            TempData["SM"] = "You have added a new page !";
+            //redirect
+            return RedirectToAction("AddPage");
+        }
+
+        // GET: Admin/Pages/editpage/id
+        public ActionResult EditPage(int id)
+        {
+            PageVM model;
+            using (var Db = new Db())
+            {
+                pageDTO dto = Db.Pages.Find(id); //get data to dto frm DB
+                if (dto == null)
+                    return HttpNotFound();
+
+                model = new PageVM(dto); //load dto data to pageVM
+
+            }
+                return View(model);
+        }
+        // POST: Admin/Pages/editpage/id
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult EditPage(PageVM model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+            int id = model.Id;
+            string slug="home";
+            using (var db = new Db())
+            {
+
+                //find the data
+                pageDTO dto = db.Pages.Find(id);
+               
+                 dto.Title = model.Title;
+                if (model.Slug != "home")
+                {
+                    if (string.IsNullOrWhiteSpace(model.Slug))
+                        slug = model.Title.Replace(" ", "-").ToLower();
+                    else
+                        slug = model.Slug.Replace(" ", "-").ToLower();
+                }
+
+                //chk sure title and slug is unique
+                if (db.Pages.Where(x => x.Id != id).Any(x =>x.Title==model.Title) || 
+                            db.Pages.Where(x => x.Id != id).Any(x => x.Slug == slug))
+                {
+                    ModelState.AddModelError("", "that title or slug is already exist !");
+                    return View(model);
+                }
+                //set dto
+                dto.Slug = slug;
+                dto.Body = model.Body;
+                dto.HasSidebar = model.HasSidebar;
+               
+                //update
+                db.SaveChanges();
+
+            }
+            //set msg
+            TempData["SM"] = "You have edited a  page !";
+            //redirect
+            return RedirectToAction("AddPage");
+        }
+
+        // GET: Admin/Pages/Details/id
+        public ActionResult Details(int id)
+        {
+            PageVM model;
+            using (var Db = new Db())
+            {
+                pageDTO dto = Db.Pages.Find(id); //get data to dto frm DB
+                if (dto == null)
+                    return HttpNotFound();
+
+                model = new PageVM(dto); //load dto data to pageVM
+
+            }
+            return View(model);
+        }
+        // POST: Admin/Pages/Delete/id
+       
+        public ActionResult Delete(int id)
+        {
+          
+            using (var db = new Db())
+            {
+             
+                //find the data
+                pageDTO dto = db.Pages.Find(id);
+                if (dto == null)
+                    return HttpNotFound();
+                //remove
+                db.Pages.Remove(dto);
+                db.SaveChanges();
+
+            }        
+            //redirect
+            return RedirectToAction("Index");
         }
     }
 }
